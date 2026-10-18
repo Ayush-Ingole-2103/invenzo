@@ -6,16 +6,8 @@ services:
     buildCommand: npm install --omit=dev
     startCommand: node server.js
     healthCheckPath: /health
-    disk:
-      name: invenzo-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
-      - key: DB_PATH
-        value: /data/database.sqlite
       - key: SESSION_SECRET
         generateValue: true
