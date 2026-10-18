@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer sign in - INVENZO</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background-color: var(--surface);
+        }
+        .dev-login-card {
+            width: 100%;
+            max-width: 380px;
+            background-color: var(--surface);
+            border-radius: var(--radius-panel);
+            box-shadow: var(--raised);
+            border: 1px solid var(--border);
+            padding: 2.25rem 2rem;
+        }
+        .dev-header {
+            text-align: center;
+            margin-bottom: 1.75rem;
+        }
+        .dev-header h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+        .dev-header p {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+        .login-error {
+            background-color: var(--surface);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            border-radius: var(--radius-control);
+            padding: 0.75rem;
+            font-size: 0.8125rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <main class="dev-login-card">
+        <header class="dev-header">
+            <h1>Developer sign in</h1>
+            <p>Platform Administration</p>
+        </header>
+
+        <div class="login-error" id="loginError" role="alert"></div>
+
+        <form id="devLoginForm">
+            <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <input class="form-input" type="text" id="username" name="username" required autocomplete="username" autofocus>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input class="form-input" type="password" id="password" name="password" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                Sign in
+            </button>
+        </form>
+    </main>
+
+    <script>
+        const form = document.getElementById('devLoginForm');
+        const errDiv = document.getElementById('loginError');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errDiv.style.display = 'none';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            try {
+                const res = await fetch('/developer/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    errDiv.textContent = data.error?.message || 'Invalid username or password.';
+                    errDiv.style.display = 'block';
+                    return;
+                }
+
+                if (data.success) {
+                    window.location.href = '/developer';
+                }
+            } catch (err) {
+                errDiv.textContent = 'Connection error. Please try again.';
+                errDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

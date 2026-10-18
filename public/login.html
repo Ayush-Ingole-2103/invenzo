@@ -3,783 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stocker — User Login &amp; Create Account</title>
-    <meta name="description" content="Stocker — Smart Inventory Management Portal">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>INVENZO - User Sign in</title>
+    <meta name="description" content="INVENZO: Inventory and billing system for retail stores.">
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        :root {
-            --brand-primary: #4f46e5;
-            --brand-primary-hover: #4338ca;
-            --brand-light: #eef2ff;
-            --text-heading: #0f172a;
-            --text-body: #475569;
-            --text-subtle: #94a3b8;
-            --card-border: #e2e8f0;
-            --input-border: #e2e8f0;
-            --input-focus: #4f46e5;
-            --radius-card: 20px;
-            --radius-elem: 10px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: var(--text-heading);
             padding: 1.5rem;
-            position: relative;
+            background-color: var(--surface);
         }
 
-        /* Subtle minimalist backdrop decoration */
-        .ambient-accent {
-            position: fixed;
-            top: 12%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 580px;
-            height: 320px;
-            background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.08) 0%, rgba(248, 250, 252, 0) 70%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* Minimal Centered Card */
-        .auth-card {
-            position: relative;
-            z-index: 1;
+        .login-card {
             width: 100%;
-            max-width: 440px;
-            background: #ffffff;
-            border-radius: var(--radius-card);
-            border: 1px solid var(--card-border);
-            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.06), 0 0 1px 1px rgba(15, 23, 42, 0.02);
+            max-width: 400px;
+            background-color: var(--surface);
+            border-radius: var(--radius-panel);
+            box-shadow: var(--raised);
+            border: 1px solid var(--border);
             padding: 2.25rem 2rem;
-            transition: all 0.25s ease;
+            margin-bottom: 2rem;
         }
 
-        /* Top Header / Branding */
-        .card-brand {
+        .login-header {
             text-align: center;
             margin-bottom: 1.75rem;
         }
 
-        .brand-logo-icon {
+        .login-logo {
             width: 48px;
             height: 48px;
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            border-radius: 12px;
+            background-color: var(--surface);
+            border-radius: var(--radius-control);
+            box-shadow: var(--raised-sm);
+            border: 1px solid var(--border);
+            color: var(--accent);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: #ffffff;
-            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
-            margin-bottom: 0.85rem;
+            margin-bottom: 0.75rem;
         }
 
-        .brand-logo-icon svg {
-            width: 24px;
-            height: 24px;
-        }
-
-        .card-brand h1 {
-            font-size: 1.35rem;
-            font-weight: 800;
-            color: var(--text-heading);
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
             letter-spacing: -0.02em;
-            margin-bottom: 0.25rem;
         }
 
-        .card-brand p {
-            font-size: 0.85rem;
-            color: var(--text-body);
+        .login-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
         }
 
-        /* Minimal Segmented Tab Switcher */
-        .tab-switcher {
+        .language-picker-wrap {
             display: flex;
-            background: #f1f5f9;
-            padding: 0.3rem;
-            border-radius: 12px;
-            margin-bottom: 1.75rem;
-            border: 1px solid #e2e8f0;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 0.6rem 0.75rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border: none;
-            background: transparent;
-            color: #64748b;
-            border-radius: 9px;
-            cursor: pointer;
-            transition: all 0.18s ease;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            gap: 0.45rem;
-            font-family: inherit;
-        }
-
-        .tab-btn.active {
-            background: #ffffff;
-            color: var(--text-heading);
-            font-weight: 700;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        }
-
-        .tab-btn svg {
-            width: 15px;
-            height: 15px;
-        }
-
-        /* Form Panes */
-        .form-pane {
-            display: none;
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        .form-pane.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Input Controls */
-        .field-group {
-            margin-bottom: 1.15rem;
-        }
-
-        .field-group label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #334155;
-            margin-bottom: 0.35rem;
-        }
-
-        .field-input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .field-icon {
-            position: absolute;
-            left: 0.95rem;
-            color: var(--text-subtle);
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.15s;
-        }
-
-        .field-icon svg {
-            width: 17px;
-            height: 17px;
-        }
-
-        .field-input-wrapper input {
-            width: 100%;
-            padding: 0.75rem 2.6rem 0.75rem 2.65rem;
-            border: 1.5px solid var(--input-border);
-            border-radius: var(--radius-elem);
-            font-size: 0.9rem;
-            font-family: inherit;
-            background: #ffffff;
-            color: var(--text-heading);
-            transition: border-color 0.15s, box-shadow 0.15s;
-        }
-
-        .field-input-wrapper input::placeholder {
-            color: #94a3b8;
-        }
-
-        .field-input-wrapper input:focus {
-            outline: none;
-            border-color: var(--input-focus);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
-        }
-
-        .field-input-wrapper:focus-within .field-icon {
-            color: var(--brand-primary);
-        }
-
-        /* Eye toggle */
-        .eye-toggle-btn {
-            position: absolute;
-            right: 0.65rem;
-            background: transparent;
-            border: none;
-            color: #94a3b8;
-            padding: 0.35rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            transition: color 0.15s;
-        }
-
-        .eye-toggle-btn:hover {
-            color: #475569;
-        }
-
-        .eye-toggle-btn svg {
-            width: 17px;
-            height: 17px;
-        }
-
-        /* Password strength indicator */
-        .password-strength-wrap {
-            margin-top: 0.35rem;
-            display: none;
-        }
-
-        .strength-track {
-            display: flex;
-            gap: 4px;
-            height: 4px;
-            margin-bottom: 0.25rem;
-        }
-
-        .strength-step {
-            flex: 1;
-            background: #e2e8f0;
-            border-radius: 2px;
-            transition: background 0.2s;
-        }
-
-        .strength-caption {
-            font-size: 0.7rem;
-            color: #64748b;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        /* Action Button */
-        .auth-submit-btn {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border: none;
-            border-radius: var(--radius-elem);
-            background: var(--brand-primary);
-            color: #ffffff;
-            font-size: 0.92rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.18s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-family: inherit;
-            margin-top: 1.25rem;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
-        }
-
-        .auth-submit-btn:hover {
-            background: var(--brand-primary-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
-        }
-
-        .auth-submit-btn:active {
-            transform: translateY(0);
-        }
-
-        .auth-submit-btn:disabled {
-            opacity: 0.65;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Alerts */
-        .auth-notice {
-            display: none;
-            padding: 0.75rem 0.9rem;
-            border-radius: var(--radius-elem);
-            font-size: 0.82rem;
-            font-weight: 500;
             margin-bottom: 1.25rem;
-            align-items: center;
-            gap: 0.55rem;
-            animation: fadeIn 0.2s ease-out;
         }
 
-        .auth-notice.error {
-            background: #fef2f2;
-            border: 1px solid #fee2e2;
-            color: #b91c1c;
+        .language-picker {
+            min-height: 36px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8125rem;
+            border-radius: var(--radius-control);
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--inset);
+            color: var(--text);
+        }
+
+        .password-wrap {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            padding: 0.25rem;
+        }
+
+        .login-error {
+            background-color: var(--surface);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            border-radius: var(--radius-control);
+            padding: 0.75rem;
+            font-size: 0.8125rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .login-footer-links {
             display: flex;
+            gap: 1.25rem;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
         }
 
-        .auth-notice.success {
-            background: #ecfdf5;
-            border: 1px solid #d1fae5;
-            color: #047857;
-            display: flex;
-        }
-
-        .auth-notice svg {
-            width: 17px;
-            height: 17px;
-            flex-shrink: 0;
-        }
-
-        /* Minimal Quick Demo Credentials Section */
-        .demo-bar {
-            margin-top: 1.5rem;
-            padding-top: 1.25rem;
-            border-top: 1px solid #f1f5f9;
-            text-align: center;
-        }
-
-        .demo-bar-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #94a3b8;
-            margin-bottom: 0.5rem;
-        }
-
-        .demo-chips {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-        }
-
-        .demo-chip {
-            padding: 0.4rem 0.85rem;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: #475569;
-            cursor: pointer;
-            transition: all 0.15s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-family: inherit;
-        }
-
-        .demo-chip:hover {
-            border-color: var(--brand-primary);
-            color: var(--brand-primary);
-            background: var(--brand-light);
-        }
-
-        .demo-chip span.code {
-            color: #64748b;
-            font-weight: 400;
-            font-family: monospace;
-            font-size: 0.72rem;
-        }
-
-        /* Bottom helper link */
-        .switch-prompt {
-            text-align: center;
-            margin-top: 1.25rem;
-            font-size: 0.8rem;
-            color: var(--text-body);
-        }
-
-        .switch-prompt a {
-            color: var(--brand-primary);
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .switch-prompt a:hover {
+        .login-footer-links a:hover {
+            color: var(--accent);
             text-decoration: underline;
-        }
-
-        @media (max-width: 480px) {
-            .auth-card {
-                padding: 1.75rem 1.4rem;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="ambient-accent"></div>
-
-    <div class="auth-card">
-        <!-- Branding Header -->
-        <div class="card-brand">
-            <div class="brand-logo-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+    <main class="login-card" role="main">
+        <header class="login-header">
+            <div class="login-logo" aria-hidden="true">
+                <!-- Lucide Boxes SVG -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z"/>
+                    <path d="m7 16.5-4.74-2.85"/><path d="m7 16.5 5-3"/><path d="M7 16.5v5.17"/>
+                    <path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z"/>
+                    <path d="m17 16.5-5-3"/><path d="m17 16.5 4.74-2.85"/><path d="M17 16.5v5.17"/>
+                    <path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z"/>
+                    <path d="M12 8 7.26 5.15"/><path d="m12 8 4.74-2.85"/><path d="M12 13.5V8"/>
+                </svg>
             </div>
-            <h1>Stocker</h1>
-            <p>Smart Inventory Portal</p>
+            <h1 class="login-title">INVENZO</h1>
+            <p class="login-subtitle" id="loginSubtitle">Inventory management</p>
+        </header>
+
+        <div class="language-picker-wrap">
+            <select class="language-picker" id="langSelect" aria-label="Select language">
+                <option value="en">English</option>
+                <option value="hi">हिंदी (Hindi)</option>
+                <option value="mr">मराठी (Marathi)</option>
+            </select>
         </div>
 
-        <!-- Minimal Tab Switcher -->
-        <div class="tab-switcher">
-            <button type="button" class="tab-btn active" id="btnTabSignin" onclick="toggleAuthTab('signin')">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
-                User Login
-            </button>
-            <button type="button" class="tab-btn" id="btnTabRegister" onclick="toggleAuthTab('register')">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
-                Create User Account
-            </button>
-        </div>
+        <div class="login-error" id="loginError" role="alert"></div>
 
-        <!-- Global Status Notice -->
-        <div id="authNotice" class="auth-notice"></div>
+        <form id="loginForm" autocomplete="on">
+            <div class="form-group">
+                <label class="form-label" for="username" id="lblUsername">Username</label>
+                <input class="form-input" type="text" id="username" name="username" required autocomplete="username" autofocus>
+            </div>
 
-        <!-- Pane 1: User Login -->
-        <div id="paneSignin" class="form-pane active">
-            <form id="formSignin" autocomplete="on">
-                <div class="field-group">
-                    <label for="signinUsername">Username</label>
-                    <div class="field-input-wrapper">
-                        <span class="field-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </span>
-                        <input type="text" id="signinUsername" name="username" placeholder="Enter username" required autocomplete="username">
-                    </div>
-                </div>
-
-                <div class="field-group">
-                    <label for="signinPassword">Password</label>
-                    <div class="field-input-wrapper">
-                        <span class="field-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        </span>
-                        <input type="password" id="signinPassword" name="password" placeholder="Enter password" required autocomplete="current-password">
-                        <button type="button" class="eye-toggle-btn" onclick="togglePassVisibility('signinPassword', this)" title="Show/Hide Password">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <button type="submit" class="auth-submit-btn" id="btnSubmitSignin">
-                    <span>Sign In</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                </button>
-            </form>
-
-            <!-- Minimal Demo Credentials -->
-            <div class="demo-bar">
-                <div class="demo-bar-label">Quick Demo Access</div>
-                <div class="demo-chips">
-                    <button type="button" class="demo-chip" onclick="quickFillDemo('admin', 'admin123')">
-                        <strong>Demo User</strong>
-                        <span class="code">admin123</span>
+            <div class="form-group">
+                <label class="form-label" for="password" id="lblPassword">Password</label>
+                <div class="password-wrap">
+                    <input class="form-input" type="password" id="password" name="password" required autocomplete="current-password">
+                    <button type="button" class="password-toggle" id="pwdToggle" aria-label="Show password">
+                        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
                     </button>
                 </div>
             </div>
 
-            <div class="switch-prompt">
-                New here? <a onclick="toggleAuthTab('register')">Create User Account</a>
-            </div>
-        </div>
+            <button type="submit" class="btn btn-primary" id="btnSubmit" style="width: 100%; margin-top: 0.5rem;">
+                Sign in
+            </button>
+        </form>
+    </main>
 
-        <!-- Pane 2: Create User Account -->
-        <div id="paneRegister" class="form-pane">
-            <form id="formRegister" autocomplete="off">
-                <div class="field-group">
-                    <label for="regFullName">Full Name</label>
-                    <div class="field-input-wrapper">
-                        <span class="field-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </span>
-                        <input type="text" id="regFullName" name="name" placeholder="Enter your full name" required>
-                    </div>
-                </div>
-
-                <div class="field-group">
-                    <label for="regUsername">Username</label>
-                    <div class="field-input-wrapper">
-                        <span class="field-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>
-                        </span>
-                        <input type="text" id="regUsername" name="username" placeholder="Choose a username" required>
-                    </div>
-                </div>
-
-                <div class="field-group">
-                    <label for="regPass">Password</label>
-                    <div class="field-input-wrapper">
-                        <span class="field-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        </span>
-                        <input type="password" id="regPass" name="password" placeholder="At least 6 characters" required oninput="evaluatePassword(this.value)">
-                        <button type="button" class="eye-toggle-btn" onclick="togglePassVisibility('regPass', this)" title="Show/Hide Password">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                        </button>
-                    </div>
-                    <div class="password-strength-wrap" id="wrapStrength">
-                        <div class="strength-track">
-                            <div class="strength-step" id="step1"></div>
-                            <div class="strength-step" id="step2"></div>
-                            <div class="strength-step" id="step3"></div>
-                        </div>
-                        <div class="strength-caption">
-                            <span>Password Strength</span>
-                            <span id="labelStrength" style="font-weight: 700;">Weak</span>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="auth-submit-btn" id="btnSubmitRegister">
-                    <span>Create User Account</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </button>
-            </form>
-
-            <div class="switch-prompt">
-                Already have an account? <a onclick="toggleAuthTab('signin')">User Login</a>
-            </div>
-        </div>
-    </div>
+    <footer class="login-footer-links">
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms and Conditions</a>
+    </footer>
 
     <script>
-        // Tab Controller
-        function toggleAuthTab(tab) {
-            dismissNotice();
-            const btnSignin = document.getElementById('btnTabSignin');
-            const btnRegister = document.getElementById('btnTabRegister');
-            const paneSignin = document.getElementById('paneSignin');
-            const paneRegister = document.getElementById('paneRegister');
+        const langSelect = document.getElementById('langSelect');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+        const pwdToggle = document.getElementById('pwdToggle');
+        const passwordInput = document.getElementById('password');
 
-            if (tab === 'signin') {
-                btnSignin.classList.add('active');
-                btnRegister.classList.remove('active');
-                paneSignin.classList.add('active');
-                paneRegister.classList.remove('active');
-                document.getElementById('signinUsername').focus();
+        // Translations mapping for login
+        const translations = {
+            en: {
+                subtitle: 'Inventory management',
+                user: 'Username',
+                pass: 'Password',
+                btn: 'Sign in',
+                err_generic: 'Invalid username or password.',
+                err_suspended: 'This store account is suspended. Contact the application provider.'
+            },
+            hi: {
+                subtitle: 'इन्वेंट्री प्रबंधन',
+                user: 'उपयोगकर्ता नाम (Username)',
+                pass: 'पासवर्ड (Password)',
+                btn: 'साइन इन करें',
+                err_generic: 'अमान्य उपयोगकर्ता नाम या पासवर्ड।',
+                err_suspended: 'यह दुकान खाता निलंबित है। कृपया प्रदाता से संपर्क करें।'
+            },
+            mr: {
+                subtitle: 'इन्व्हेंटरी व्यवस्थापन',
+                user: 'वापरकर्ता नाव (Username)',
+                pass: 'पासवर्ड (Password)',
+                btn: 'साइन इन करा',
+                err_generic: 'अवैध वापरकर्ता नाव किंवा पासवर्ड.',
+                err_suspended: 'हे दुकान खाते निलंबित केले आहे. कृपया प्रदात्याशी संपर्क साधा.'
+            }
+        };
+
+        function setLanguage(lang) {
+            localStorage.setItem('stocker_lang', lang);
+            document.documentElement.lang = lang;
+            const t = translations[lang] || translations.en;
+            document.getElementById('loginSubtitle').textContent = t.subtitle;
+            document.getElementById('lblUsername').textContent = t.user;
+            document.getElementById('lblPassword').textContent = t.pass;
+            document.getElementById('btnSubmit').textContent = t.btn;
+        }
+
+        const savedLang = localStorage.getItem('stocker_lang') || 'en';
+        langSelect.value = savedLang;
+        setLanguage(savedLang);
+
+        langSelect.addEventListener('change', (e) => {
+            setLanguage(e.target.value);
+        });
+
+        // Toggle password visibility
+        pwdToggle.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
             } else {
-                btnRegister.classList.add('active');
-                btnSignin.classList.remove('active');
-                paneRegister.classList.add('active');
-                paneSignin.classList.remove('active');
-                document.getElementById('regFullName').focus();
-            }
-        }
-
-        // Password Reveal
-        function togglePassVisibility(id, btn) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            const isSecret = el.type === 'password';
-            el.type = isSecret ? 'text' : 'password';
-
-            if (isSecret) {
-                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.88 9.88 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`;
-            } else {
-                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
-            }
-        }
-
-        // Demo Autofill
-        function quickFillDemo(username, password) {
-            toggleAuthTab('signin');
-            const u = document.getElementById('signinUsername');
-            const p = document.getElementById('signinPassword');
-            u.value = username;
-            p.value = password;
-            u.style.borderColor = '#4f46e5';
-            p.style.borderColor = '#4f46e5';
-            setTimeout(() => {
-                u.style.borderColor = '';
-                p.style.borderColor = '';
-            }, 800);
-        }
-
-        // Realtime Password Strength
-        function evaluatePassword(val) {
-            const wrap = document.getElementById('wrapStrength');
-            if (!val || val.length === 0) {
-                wrap.style.display = 'none';
-                return;
-            }
-            wrap.style.display = 'block';
-
-            const s1 = document.getElementById('step1');
-            const s2 = document.getElementById('step2');
-            const s3 = document.getElementById('step3');
-            const lbl = document.getElementById('labelStrength');
-
-            let score = 0;
-            if (val.length >= 6) score++;
-            if (val.length >= 8 && /[A-Z0-9]/.test(val)) score++;
-            if (val.length >= 10 && /[^A-Za-z0-9]/.test(val)) score++;
-
-            s1.style.background = '#e2e8f0';
-            s2.style.background = '#e2e8f0';
-            s3.style.background = '#e2e8f0';
-
-            if (score <= 1) {
-                s1.style.background = '#ef4444';
-                lbl.textContent = 'Weak';
-                lbl.style.color = '#ef4444';
-            } else if (score === 2) {
-                s1.style.background = '#f59e0b';
-                s2.style.background = '#f59e0b';
-                lbl.textContent = 'Good';
-                lbl.style.color = '#f59e0b';
-            } else {
-                s1.style.background = '#10b981';
-                s2.style.background = '#10b981';
-                s3.style.background = '#10b981';
-                lbl.textContent = 'Strong';
-                lbl.style.color = '#10b981';
-            }
-        }
-
-        // Status Notice Helper
-        function displayNotice(message, isSuccess = false) {
-            const el = document.getElementById('authNotice');
-            el.className = 'auth-notice ' + (isSuccess ? 'success' : 'error');
-            const iconSvg = isSuccess
-                ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
-                : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`;
-            el.innerHTML = iconSvg + `<span>${message}</span>`;
-            el.style.display = 'flex';
-        }
-
-        function dismissNotice() {
-            const el = document.getElementById('authNotice');
-            el.style.display = 'none';
-        }
-
-        // Sign In Handler
-        document.getElementById('formSignin').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            dismissNotice();
-            const btn = document.getElementById('btnSubmitSignin');
-            const origText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<span>Signing in...</span>`;
-
-            try {
-                const resp = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: document.getElementById('signinUsername').value.trim(),
-                        password: document.getElementById('signinPassword').value
-                    })
-                });
-
-                let data;
-                try {
-                    data = await resp.json();
-                } catch {
-                    data = { success: false, error: { message: 'Server returned unexpected response.' } };
-                }
-
-                if (data.success) {
-                    sessionStorage.setItem('user', JSON.stringify(data.data));
-                    sessionStorage.setItem('csrfToken', data.data.csrfToken);
-                    displayNotice('Sign in successful! Entering workspace...', true);
-                    setTimeout(() => {
-                        window.location.href = '/app';
-                    }, 350);
-                } else {
-                    displayNotice(data.error?.message || 'Invalid username or password.');
-                    btn.disabled = false;
-                    btn.innerHTML = origText;
-                }
-            } catch (err) {
-                displayNotice('Connection failed. Please ensure the server is running.');
-                btn.disabled = false;
-                btn.innerHTML = origText;
+                passwordInput.type = 'password';
             }
         });
 
-        // Registration Handler
-        document.getElementById('formRegister').addEventListener('submit', async (e) => {
+        // Submit form
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            dismissNotice();
-            const btn = document.getElementById('btnSubmitRegister');
-            const origText = btn.innerHTML;
+            loginError.style.display = 'none';
 
-            const name = document.getElementById('regFullName').value.trim();
-            const username = document.getElementById('regUsername').value.trim();
-            const password = document.getElementById('regPass').value;
-
-            if (password.length < 6) {
-                displayNotice('Password must be at least 6 characters.');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = `<span>Creating user account...</span>`;
+            const username = document.getElementById('username').value.trim();
+            const password = passwordInput.value;
+            const currentLang = langSelect.value;
+            const t = translations[currentLang] || translations.en;
 
             try {
-                const resp = await fetch('/api/auth/register', {
+                const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: name,
-                        username: username,
-                        password: password
-                    })
+                    body: JSON.stringify({ username, password })
                 });
 
-                let data;
-                try {
-                    data = await resp.json();
-                } catch {
-                    data = { success: false, error: { message: 'Server returned unexpected response.' } };
+                const data = await res.json();
+
+                if (!res.ok) {
+                    if (data.error && data.error.code === 'STORE_SUSPENDED') {
+                        loginError.textContent = t.err_suspended;
+                    } else {
+                        loginError.textContent = t.err_generic;
+                    }
+                    loginError.style.display = 'block';
+                    return;
                 }
 
                 if (data.success) {
-                    sessionStorage.setItem('user', JSON.stringify(data.data));
-                    sessionStorage.setItem('csrfToken', data.data.csrfToken);
-                    displayNotice('User account created successfully! Loading dashboard...', true);
-                    setTimeout(() => {
-                        window.location.href = '/app';
-                    }, 500);
-                } else {
-                    displayNotice(data.error?.message || 'Unable to create account.');
-                    btn.disabled = false;
-                    btn.innerHTML = origText;
-                }
-            } catch (err) {
-                displayNotice('Connection error while reaching the server.');
-                btn.disabled = false;
-                btn.innerHTML = origText;
-            }
-        });
-
-        // Auto-redirect if session is active
-        (async () => {
-            try {
-                const resp = await fetch('/api/auth/me');
-                const data = await resp.json();
-                if (data.success) {
-                    sessionStorage.setItem('user', JSON.stringify(data.data));
-                    sessionStorage.setItem('csrfToken', data.data.csrfToken);
                     window.location.href = '/app';
                 }
-            } catch {}
-        })();
+            } catch (err) {
+                loginError.textContent = 'Connection error. Please try again.';
+                loginError.style.display = 'block';
+            }
+        });
     </script>
 </body>
 </html>

@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 10, // max 10 login attempts per window
+    skip: () => process.env.NODE_ENV === 'test',
     message: {
         success: false,
         error: {
@@ -26,6 +27,7 @@ const loginLimiter = rateLimit({
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 200,
+    skip: () => process.env.NODE_ENV === 'test',
     message: {
         success: false,
         error: {

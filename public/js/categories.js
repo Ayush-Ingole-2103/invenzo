@@ -3,14 +3,12 @@
 // ============================================
 const Categories = {
     async load() {
-        if (App.user.role === 'admin') {
-            App.setTopbarActions(`
-                <button class="btn btn-primary" onclick="Categories.showForm()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-                    Add Category
-                </button>
-            `);
-        }
+        App.setTopbarActions(`
+            <button class="btn btn-primary" onclick="Categories.showForm()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                Add Category
+            </button>
+        `);
         await this.fetchCategories();
     },
 
@@ -25,24 +23,31 @@ const Categories = {
             <div class="card">
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>Category</th><th>Products</th><th>Created</th>${App.user.role === 'admin' ? '<th>Actions</th>' : ''}</tr></thead>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th style="width: 140px;" class="text-center">Products</th>
+                                <th style="width: 180px;">Created</th>
+                                <th style="width: 150px;" class="text-right">Actions</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             ${data.data.length === 0 ? `<tr><td colspan="4"><div class="empty-state"><h3>No categories yet</h3><p>Add your first category to organize products.</p></div></td></tr>` :
                             data.data.map(c => `
                                 <tr>
-                                    <td style="font-weight:500;">${c.name}</td>
-                                    <td>${c.product_count || 0}</td>
-                                    <td class="text-muted">${App.formatDate(c.created_at)}</td>
-                                    ${App.user.role === 'admin' ? `<td>
+                                    <td style="font-weight:600;color:var(--text);">${c.name}</td>
+                                    <td class="text-center"><span class="badge badge-neutral" style="font-variant-numeric:tabular-nums;font-weight:600;">${c.product_count || 0}</span></td>
+                                    <td class="text-muted text-sm">${App.formatDate(c.created_at)}</td>
+                                    <td class="text-right">
                                         <div class="action-btns">
                                             <button class="btn btn-sm btn-secondary" onclick="Categories.showForm(${c.id}, '${c.name.replace(/'/g, "\\'")}')" title="Edit">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                                Edit
                                             </button>
                                             <button class="btn btn-sm btn-danger" onclick="Categories.deleteCategory(${c.id}, '${c.name.replace(/'/g, "\\'")}')" title="Delete">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                                Delete
                                             </button>
                                         </div>
-                                    </td>` : ''}
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -58,7 +63,7 @@ const Categories = {
         document.getElementById('confirmMessage').innerHTML = `
             <div class="form-group" style="margin-bottom:0;">
                 <label>Category Name <span class="required">*</span></label>
-                <input type="text" id="categoryNameInput" value="${currentName}" required minlength="2" placeholder="Enter category name" style="width:100%;padding:0.625rem;border:1px solid var(--border-color);border-radius:var(--radius);font-size:0.875rem;">
+                <input type="text" id="categoryNameInput" value="${currentName}" required minlength="2" placeholder="Enter category name" class="form-control">
             </div>
         `;
         document.getElementById('confirmOk').textContent = id ? 'Update' : 'Create';
@@ -97,3 +102,5 @@ const Categories = {
         else { App.toast(resp.error.message, 'error'); }
     }
 };
+
+window.Categories = Categories;

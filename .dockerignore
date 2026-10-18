@@ -1,0 +1,12 @@
+node_modules
+.env
+.git
+.gitignore
+*.md
+storage/product-images/*
+!storage/product-images/.gitkeep
+*.jpeg
+*.jpg
+*.png
+debug_sales.js
+DBMS mini project/

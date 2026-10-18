@@ -1,5 +1,5 @@
 node_modules/
 .env
-database/database.sqlite
 storage/product-images/*
 !storage/product-images/.gitkeep
+database/*.legacy.bak

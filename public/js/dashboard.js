@@ -1,298 +1,387 @@
 // ============================================
-// Dashboard Page
+// Dashboard Page — PRD Section 12.1
+// Real-time Analytics & Sales Trend
 // ============================================
+
 const Dashboard = {
-    charts: {},
+    chart: null,
+    currentRange: '7d',
+    pollInterval: null,
+    isInitialized: false,
 
     async load() {
-        try {
-            const data = await App.api('/api/dashboard');
-            if (!data || !data.success) {
-                App.setContent(`
-                    <div class="empty-state" style="padding: 3rem 1rem; text-align: center;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--danger); margin-bottom:1rem;"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-                        <h3>Failed to load dashboard data</h3>
-                        <p class="text-muted">${data?.error?.message || 'Please check your connection and reload.'}</p>
-                        <button class="btn btn-primary" onclick="Dashboard.load()" style="margin-top:1rem;">Retry</button>
-                    </div>
-                `);
-                return;
-            }
+        App.setTopbarActions(`
+            <button class="btn btn-primary" onclick="App.navigate('billing')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+                Open Counter Billing
+            </button>
+        `);
 
-            const stats = data.data;
-
+        const resp = await App.api('/api/dashboard');
+        if (!resp || !resp.success) {
             App.setContent(`
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon blue">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
-                    </div>
-                    <div class="stat-info">
-                        <h4>Total Products</h4>
-                        <div class="stat-value">${stats.totalProducts}</div>
-                    </div>
+                <div class="empty-state">
+                    <h3>Failed to load dashboard</h3>
+                    <p class="text-muted">${resp?.error?.message || 'Please try again.'}</p>
+                    <button class="btn btn-primary" onclick="Dashboard.load()">Retry</button>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon green">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z"/><path d="m7 16.5-4.74-2.85"/><path d="m7 16.5 5-3"/><path d="M7 16.5v5.17"/><path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z"/><path d="m17 16.5-5-3"/><path d="m17 16.5 4.74-2.85"/><path d="M17 16.5v5.17"/><path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z"/><path d="M12 8 7.26 5.15"/><path d="m12 8 4.74-2.85"/><path d="M12 13.5V8"/></svg>
-                    </div>
-                    <div class="stat-info">
-                        <h4>Total Stock</h4>
-                        <div class="stat-value">${stats.totalStock.toLocaleString()}</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon yellow">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
-                    </div>
-                    <div class="stat-info">
-                        <h4>Low Stock</h4>
-                        <div class="stat-value">${stats.lowStock}</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon red">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>
-                    </div>
-                    <div class="stat-info">
-                        <h4>Out of Stock</h4>
-                        <div class="stat-value">${stats.outOfStock}</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon purple">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                    </div>
-                    <div class="stat-info">
-                        <h4>Today's Sales</h4>
-                        <div class="stat-value">${App.formatCurrency(stats.todaySales)}</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon green">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12"/><path d="M6 8h12"/><path d="M6 13l8.5 8"/><path d="M6 13h3a4 4 0 0 0 0-8"/></svg>
-                    </div>
-                    <div class="stat-info">
-                        <h4>Total Revenue</h4>
-                        <div class="stat-value">${App.formatCurrency(stats.totalSales)}</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon blue">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                    </div>
-                    <div class="stat-info">
-                        <h4>Transactions</h4>
-                        <div class="stat-value">${stats.totalTransactions}</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon yellow">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12"/><path d="M6 8h12"/><path d="M6 13l8.5 8"/><path d="M6 13h3a4 4 0 0 0 0-8"/></svg>
-                    </div>
-                    <div class="stat-info">
-                        <h4>Today's Transactions</h4>
-                        <div class="stat-value">${stats.todayTransactions}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dashboard-grid">
-                <div class="chart-card">
-                    <div class="card-header">
-                        <h3>Sales Overview (7 Days)</h3>
-                        <span class="header-badge">Revenue Trend</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-wrapper">
-                            <canvas id="salesChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="chart-card">
-                    <div class="card-header">
-                        <h3>Top Selling Products</h3>
-                        <span class="header-badge">By Sales Volume</span>
-                    </div>
-                    <div class="card-body" style="padding:0;">
-                        <div id="topProductsList"></div>
-                    </div>
-                </div>
-                <div class="chart-card" style="grid-column: span 2;">
-                    <div class="card-header">
-                        <h3>Recent Stock Movements</h3>
-                        <span class="header-badge">Live Inventory Ledger</span>
-                    </div>
-                    <div class="card-body" style="padding:0;">
-                        <div id="recentMovements"></div>
-                    </div>
-                </div>
-            </div>
-        `);
-
-        this.loadSalesChart();
-        this.loadTopProducts();
-        this.loadRecentMovements();
-    } catch (err) {
-        console.error('Dashboard load error:', err);
-        App.setContent(`
-            <div class="empty-state" style="padding: 3rem 1rem; text-align: center;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--danger); margin-bottom:1rem;"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-                <h3>Error loading dashboard</h3>
-                <p class="text-muted">${err.message}</p>
-                <button class="btn btn-primary" onclick="Dashboard.load()" style="margin-top:1rem;">Retry</button>
-            </div>
-        `);
-    }
-},
-
-    async loadSalesChart() {
-        const data = await App.api('/api/dashboard/sales?range=week');
-        if (!data || !data.success) return;
-
-        const ctx = document.getElementById('salesChart');
-        if (!ctx) return;
-
-        if (typeof Chart === 'undefined') {
-            ctx.parentElement.innerHTML = '<p class="text-muted" style="text-align:center;padding:2.5rem 1rem;">Chart library unavailable.</p>';
+            `);
             return;
         }
 
-        // Destroy previous chart if exists
-        if (this.charts.sales) this.charts.sales.destroy();
+        const d = resp.data;
+        const today = d.today || {};
+        const store = d.store || {};
+        const credit = d.credit || {};
+        const topProducts = d.topProducts || [];
+        const lowStockItems = d.lowStockItems || [];
 
-        const labels = data.data.map(d => {
-            const [y, m, day] = d.date.split('-').map(Number);
-            const date = new Date(Date.UTC(y, m - 1, day));
-            return date.toLocaleDateString('en-IN', { timeZone: 'UTC', day: '2-digit', month: 'short' });
+        // Max revenue for relative bar widths
+        const maxRev = topProducts.length > 0 ? Math.max(...topProducts.map(p => p.revenuePaise || 0)) : 1;
+
+        App.setContent(`
+            <!-- PRD 12.1: Three Top-Level Panels -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1.25rem;margin-bottom:1.5rem;">
+                <!-- 1. Today Panel -->
+                <div class="panel" style="display:flex;flex-direction:column;justify-content:space-between;">
+                    <div>
+                        <div class="text-xs text-muted font-semibold" style="text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">
+                            Today's Counter Sales
+                        </div>
+                        <div id="kpiTodayBilled" style="font-size:2rem;font-weight:700;color:var(--text);">${today.billed || '₹0.00'}</div>
+                        <div class="text-sm text-muted" style="margin-top:0.25rem;">
+                            <strong id="kpiTodayBillCount">${today.billCount || 0}</strong> bills completed today
+                        </div>
+                    </div>
+                    <div style="border-top:1px solid var(--border);margin-top:1rem;padding-top:0.75rem;display:flex;justify-content:space-between;font-size:0.8125rem;">
+                        <div>Cash: <strong id="kpiCashSales">${today.cashSales || '₹0.00'}</strong></div>
+                        <div>UPI: <strong id="kpiUpiSales">${today.upiSales || '₹0.00'}</strong></div>
+                        <div>Udhaar: <strong id="kpiCreditGiven">${today.creditGiven || '₹0.00'}</strong></div>
+                    </div>
+                </div>
+
+                <!-- 2. Store Panel -->
+                <div class="panel" style="display:flex;flex-direction:column;justify-content:space-between;">
+                    <div>
+                        <div class="text-xs text-muted font-semibold" style="text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">
+                            Store Inventory
+                        </div>
+                        <div id="kpiActiveProducts" style="font-size:2rem;font-weight:700;color:var(--accent);">${store.activeProducts || 0}</div>
+                        <div class="text-sm text-muted" style="margin-top:0.25rem;">
+                            Active Products in Catalog
+                        </div>
+                    </div>
+                    <div style="border-top:1px solid var(--border);margin-top:1rem;padding-top:0.75rem;display:flex;justify-content:space-between;font-size:0.8125rem;">
+                        <div>Low Stock: <span id="kpiLowStock" class="badge badge-warning">${store.lowStockCount || 0}</span></div>
+                        <div>Out: <span id="kpiOutOfStock" class="badge badge-danger">${store.outOfStockCount || 0}</span></div>
+                        <div>Stock Value: <strong id="kpiStockValue">${store.stockValueAtCost || '₹0.00'}</strong></div>
+                    </div>
+                </div>
+
+                <!-- 3. Customer Credit (Udhaar) Panel -->
+                <div class="panel" style="display:flex;flex-direction:column;justify-content:space-between;">
+                    <div>
+                        <div class="text-xs text-muted font-semibold" style="text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">
+                            Customer Udhaar Ledger
+                        </div>
+                        <div id="kpiTotalOutstanding" style="font-size:2rem;font-weight:700;color:var(--danger);">${credit.totalOutstanding || '₹0.00'}</div>
+                        <div class="text-sm text-muted" style="margin-top:0.25rem;">
+                            Total Outstanding Dues
+                        </div>
+                    </div>
+                    <div style="border-top:1px solid var(--border);margin-top:1rem;padding-top:0.75rem;display:flex;justify-content:space-between;align-items:center;font-size:0.8125rem;">
+                        <div>Customers with Dues: <strong id="kpiCustomersWithDues">${credit.customersWithDues || 0}</strong></div>
+                        <button class="btn btn-sm btn-secondary" onclick="App.navigate('customers')">View Ledger</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts & Top Products Grid -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));gap:1.5rem;margin-bottom:1.5rem;">
+                <!-- Sales Trend Graph -->
+                <div class="card" style="padding:1.25rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                        <h3 style="margin:0;font-size:1.1rem;">Sales Trend</h3>
+                        <div style="display:flex;gap:0;border-radius:6px;overflow:hidden;border:1px solid var(--border);">
+                            <button id="btnRange7d" class="btn btn-sm ${this.currentRange === '7d' ? 'btn-primary' : 'btn-secondary'}" onclick="Dashboard.switchRange('7d')" style="border-radius:0;border:none;padding:0.3rem 0.7rem;">7D</button>
+                            <button id="btnRange30d" class="btn btn-sm ${this.currentRange === '30d' ? 'btn-primary' : 'btn-secondary'}" onclick="Dashboard.switchRange('30d')" style="border-radius:0;border:none;border-left:1px solid var(--border);padding:0.3rem 0.7rem;">30D</button>
+                            <button id="btnRange12m" class="btn btn-sm ${this.currentRange === '12m' ? 'btn-primary' : 'btn-secondary'}" onclick="Dashboard.switchRange('12m')" style="border-radius:0;border:none;border-left:1px solid var(--border);padding:0.3rem 0.7rem;">12M</button>
+                        </div>
+                    </div>
+                    <div style="height:260px;position:relative;">
+                        <canvas id="salesTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top 5 Products by Revenue -->
+                <div class="card" style="padding:1.25rem;">
+                    <h3 style="margin:0 0 1rem 0;font-size:1.1rem;">Top Products by Revenue</h3>
+                    ${topProducts.length === 0 ? `
+                        <div class="empty-state" style="padding:2rem 1rem;text-align:center;">
+                            <p class="text-muted">No sales completed yet.</p>
+                        </div>
+                    ` : `
+                        <div style="display:flex;flex-direction:column;gap:0.85rem;">
+                            ${topProducts.map((tp, idx) => {
+                                const pct = maxRev > 0 ? Math.round(((tp.revenuePaise || 0) / maxRev) * 100) : 0;
+                                return `
+                                    <div>
+                                        <div style="display:flex;justify-content:space-between;font-size:0.875rem;margin-bottom:0.25rem;">
+                                            <span style="font-weight:600;">${idx + 1}. ${tp.name}</span>
+                                            <span style="font-weight:700;color:var(--text);">${tp.revenue}</span>
+                                        </div>
+                                        <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.35rem;">
+                                            Sold: ${tp.quantity}
+                                        </div>
+                                        <div style="height:6px;background:var(--surface-sunken);border-radius:3px;overflow:hidden;">
+                                            <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px;"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `}
+                </div>
+            </div>
+
+            <!-- Low Stock Alert List -->
+            ${lowStockItems.length > 0 ? `
+                <div class="card" style="padding:1.25rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--warning);"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <h3 style="margin:0;font-size:1.1rem;">Low Stock Alerts</h3>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="App.navigate('stock')">Go to Reorder List</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th style="width: 140px;">SKU</th>
+                                    <th style="width: 140px;" class="text-right">Current Stock</th>
+                                    <th style="width: 160px;" class="text-right">Min Stock Threshold</th>
+                                    <th style="width: 120px;" class="text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${lowStockItems.map(item => `
+                                    <tr>
+                                        <td><div style="font-weight:600;color:var(--text);">${item.name}</div></td>
+                                        <td><code style="font-size:0.8rem;background:var(--surface-sunken);padding:0.15rem 0.35rem;border-radius:4px;border:1px solid var(--border);">${item.sku}</code></td>
+                                        <td class="text-right" style="font-weight:600;color:var(--danger);font-variant-numeric:tabular-nums;">${item.stock_display}</td>
+                                        <td class="text-right" style="font-variant-numeric:tabular-nums;">${item.min_display}</td>
+                                        <td class="text-right">
+                                            <button class="btn btn-sm btn-primary" onclick="App.navigate('stock')">Restock</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            ` : ''}
+        `);
+
+        // Load Chart
+        await this.loadChart(this.currentRange);
+
+        // Start live auto-polling while viewing dashboard
+        this.startPolling();
+
+        // Listen for new sales dispatched from Counter Billing
+        if (!this.isInitialized) {
+            window.addEventListener('ims:sale-completed', () => {
+                if (App.currentPage === 'dashboard') {
+                    this.refreshAll();
+                }
+            });
+            this.isInitialized = true;
+        }
+    },
+
+    startPolling() {
+        this.stopPolling();
+        this.pollInterval = setInterval(() => {
+            if (App.currentPage !== 'dashboard') {
+                this.stopPolling();
+                return;
+            }
+            this.refreshDataSilent();
+        }, 8000);
+    },
+
+    stopPolling() {
+        if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+        }
+    },
+
+    async switchRange(range) {
+        this.currentRange = range;
+        ['7d', '30d', '12m'].forEach(r => {
+            const btn = document.getElementById(`btnRange${r}`);
+            if (btn) {
+                btn.className = `btn btn-sm ${r === range ? 'btn-primary' : 'btn-secondary'}`;
+            }
         });
-        const values = data.data.map(d => d.total);
+        await this.loadChart(range);
+    },
 
-        this.charts.sales = new Chart(ctx, {
-            type: 'bar',
+    async refreshAll() {
+        await this.loadChart(this.currentRange);
+        const resp = await App.api('/api/dashboard');
+        if (resp && resp.success) this.updateKpis(resp.data);
+    },
+
+    async refreshDataSilent() {
+        try {
+            await this.loadChart(this.currentRange, true);
+            const resp = await App.api('/api/dashboard');
+            if (resp && resp.success) this.updateKpis(resp.data);
+        } catch {}
+    },
+
+    updateKpis(data) {
+        if (!data) return;
+        const today = data.today || {};
+        const store = data.store || {};
+        const credit = data.credit || {};
+
+        const elTodayBilled = document.getElementById('kpiTodayBilled');
+        if (elTodayBilled && today.billed) elTodayBilled.textContent = today.billed;
+
+        const elTodayBillCount = document.getElementById('kpiTodayBillCount');
+        if (elTodayBillCount && today.billCount !== undefined) elTodayBillCount.textContent = today.billCount;
+
+        const elCash = document.getElementById('kpiCashSales');
+        if (elCash && today.cashSales) elCash.textContent = today.cashSales;
+
+        const elUpi = document.getElementById('kpiUpiSales');
+        if (elUpi && today.upiSales) elUpi.textContent = today.upiSales;
+
+        const elCredit = document.getElementById('kpiCreditGiven');
+        if (elCredit && today.creditGiven) elCredit.textContent = today.creditGiven;
+
+        const elActive = document.getElementById('kpiActiveProducts');
+        if (elActive && store.activeProducts !== undefined) elActive.textContent = store.activeProducts;
+
+        const elLow = document.getElementById('kpiLowStock');
+        if (elLow && store.lowStockCount !== undefined) elLow.textContent = store.lowStockCount;
+
+        const elOut = document.getElementById('kpiOutOfStock');
+        if (elOut && store.outOfStockCount !== undefined) elOut.textContent = store.outOfStockCount;
+
+        const elStockVal = document.getElementById('kpiStockValue');
+        if (elStockVal && store.stockValueAtCost) elStockVal.textContent = store.stockValueAtCost;
+
+        const elOutstanding = document.getElementById('kpiTotalOutstanding');
+        if (elOutstanding && credit.totalOutstanding) elOutstanding.textContent = credit.totalOutstanding;
+
+        const elCustDues = document.getElementById('kpiCustomersWithDues');
+        if (elCustDues && credit.customersWithDues !== undefined) elCustDues.textContent = credit.customersWithDues;
+    },
+
+    async loadChart(range, silent = false) {
+        const resp = await App.api(`/api/dashboard/sales?range=${range}`);
+        if (!resp || !resp.success) return;
+
+        const dataPoints = resp.data || [];
+        const canvas = document.getElementById('salesTrendChart');
+        if (!canvas) return;
+
+        const labels = dataPoints.map(d => d.label);
+        const dataValues = dataPoints.map(d => d.total);
+
+        // Silent in-place real-time update
+        if (silent && this.chart) {
+            this.chart.data.labels = labels;
+            this.chart.data.datasets[0].data = dataValues;
+            this.chart.update('none');
+            return;
+        }
+
+        if (this.chart) {
+            this.chart.destroy();
+        }
+
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+        gradient.addColorStop(0, 'rgba(31, 95, 139, 0.28)');
+        gradient.addColorStop(1, 'rgba(31, 95, 139, 0.01)');
+
+        this.chart = new Chart(ctx, {
+            type: 'line',
             data: {
                 labels,
                 datasets: [{
                     label: 'Sales (₹)',
-                    data: values,
-                    backgroundColor: 'rgba(79, 70, 229, 0.15)',
-                    borderColor: '#4f46e5',
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    borderSkipped: false
+                    data: dataValues,
+                    borderColor: '#1F5F8B',
+                    backgroundColor: gradient,
+                    borderWidth: 2.5,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#1F5F8B',
+                    pointBorderColor: '#FFFFFF',
+                    pointBorderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: silent ? 0 : 500
+                },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleFont: { size: 12, weight: '600' },
+                        bodyFont: { size: 13, weight: '700' },
+                        padding: 10,
+                        cornerRadius: 6,
                         callbacks: {
-                            label: (context) => ` Sales: ${App.formatCurrency(context.parsed.y)}`
+                            title: (items) => {
+                                const idx = items[0].dataIndex;
+                                return dataPoints[idx]?.label || items[0].label;
+                            },
+                            label: (ctx) => {
+                                const idx = ctx.dataIndex;
+                                const item = dataPoints[idx];
+                                const bills = item?.count || 0;
+                                const billsText = bills === 1 ? '1 bill' : `${bills} bills`;
+                                return `₹${ctx.parsed.y.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${billsText})`;
+                            }
                         }
                     }
                 },
                 scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-                    y: {
-                        beginAtZero: true,
+                    x: {
+                        grid: { display: false },
                         ticks: {
                             font: { size: 11 },
-                            callback: (value) => `₹${value.toLocaleString('en-IN')}`
-                        },
-                        grid: { color: '#f1f5f9' }
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: range === '30d' ? 10 : 7
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                        ticks: {
+                            font: { size: 11 },
+                            callback: (v) => `₹${v.toLocaleString('en-IN')}`
+                        }
                     }
                 }
             }
         });
-    },
-
-    async loadTopProducts() {
-        const data = await App.api('/api/dashboard/top-products?limit=5');
-        const container = document.getElementById('topProductsList');
-        if (!container || !data.success) return;
-
-        if (!data.data || data.data.length === 0) {
-            container.innerHTML = '<div class="empty-state" style="padding:3rem 1rem;"><p>No sales recorded yet. Completed sales will rank here automatically.</p></div>';
-            return;
-        }
-
-        const maxUnits = Math.max(...data.data.map(p => p.total_sold || 0), 1);
-
-        container.innerHTML = data.data.map((p, i) => {
-            const percent = Math.min(100, Math.max(12, Math.round((p.total_sold / maxUnits) * 100)));
-            return `
-                <div class="top-product-item">
-                    <div class="top-product-rank rank-${i + 1}">${i + 1}</div>
-                    <div class="top-product-info">
-                        <div class="top-product-header">
-                            <span class="top-product-name" title="${p.name}">
-                                ${p.name}
-                                ${p.sku ? `<code style="font-size:0.6875rem;font-weight:500;color:var(--text-secondary);background:#f1f5f9;padding:0.1rem 0.35rem;border-radius:4px;margin-left:0.35rem;">${p.sku}</code>` : ''}
-                            </span>
-                            <span class="top-product-revenue">${App.formatCurrency(p.total_revenue)}</span>
-                        </div>
-                        <div class="top-product-bar-container">
-                            <div class="top-product-bar" style="width: ${percent}%;"></div>
-                        </div>
-                        <div class="top-product-meta">
-                            <span><strong>${p.total_sold}</strong> ${p.total_sold === 1 ? 'unit' : 'units'} sold</span>
-                            <span>Avg. ${App.formatCurrency(p.total_sold ? p.total_revenue / p.total_sold : 0)}/unit</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    },
-
-    async loadRecentMovements() {
-        const data = await App.api('/api/dashboard/recent-movements?limit=10');
-        const container = document.getElementById('recentMovements');
-        if (!container || !data.success) return;
-
-        if (!data.data || data.data.length === 0) {
-            container.innerHTML = '<div class="empty-state" style="padding:3rem 1rem;"><p>No stock movements recorded yet.</p></div>';
-            return;
-        }
-
-        container.innerHTML = `
-            <div class="table-container">
-                <table class="recent-table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>SKU</th>
-                            <th>Action Type</th>
-                            <th style="text-align:right;">Quantity Change</th>
-                            <th style="text-align:right;">Resulting Stock</th>
-                            <th>Reference / Note</th>
-                            <th>Recorded By</th>
-                            <th>Date & Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.data.map(m => `
-                            <tr>
-                                <td><strong style="color:var(--text-primary);">${m.product_name || 'Product #' + m.product_id}</strong></td>
-                                <td><code style="font-size:0.75rem;padding:0.15rem 0.45rem;background:#f1f5f9;border-radius:4px;color:var(--text-secondary);">${m.sku || '—'}</code></td>
-                                <td><span class="movement-type movement-${m.type}">${m.type}</span></td>
-                                <td style="text-align:right;font-weight:700;color:${m.quantity_change > 0 ? '#16a34a' : '#dc2626'};">
-                                    ${m.quantity_change > 0 ? '+' : ''}${m.quantity_change}
-                                </td>
-                                <td style="text-align:right;font-weight:600;">
-                                    ${m.quantity_after} units
-                                </td>
-                                <td class="text-muted" style="font-size:0.8rem;">
-                                    ${m.note || (m.reference_id ? 'Sale #' + m.reference_id : '—')}
-                                </td>
-                                <td style="color:var(--text-secondary);font-size:0.8125rem;">${m.user_name || 'Administrator'}</td>
-                                <td class="text-muted" style="font-size:0.78rem;">${App.formatDateTime(m.created_at)}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
     }
 };
+
+window.Dashboard = Dashboard;

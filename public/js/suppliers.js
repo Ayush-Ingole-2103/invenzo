@@ -3,14 +3,12 @@
 // ============================================
 const Suppliers = {
     async load() {
-        if (App.user.role === 'admin') {
-            App.setTopbarActions(`
-                <button class="btn btn-primary" onclick="Suppliers.showForm()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-                    Add Supplier
-                </button>
-            `);
-        }
+        App.setTopbarActions(`
+            <button class="btn btn-primary" onclick="Suppliers.showForm()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                Add Supplier
+            </button>
+        `);
         await this.fetchSuppliers();
     },
 
@@ -25,27 +23,36 @@ const Suppliers = {
             <div class="card">
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>Supplier</th><th>Phone</th><th>Email</th><th>Products</th>${App.user.role === 'admin' ? '<th>Actions</th>' : ''}</tr></thead>
+                        <thead>
+                            <tr>
+                                <th>Supplier</th>
+                                <th style="width: 160px;">Phone</th>
+                                <th style="width: 220px;">Email</th>
+                                <th style="width: 120px;" class="text-center">Products</th>
+                                <th style="width: 150px;" class="text-right">Actions</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             ${data.data.length === 0 ? `<tr><td colspan="5"><div class="empty-state"><h3>No suppliers yet</h3><p>Add your first supplier.</p></div></td></tr>` :
                             data.data.map(s => `
                                 <tr>
                                     <td>
-                                        <div><div style="font-weight:500;">${s.name}</div>${s.address ? `<div class="text-muted text-sm">${s.address}</div>` : ''}</div>
+                                        <div style="font-weight:600;color:var(--text);">${s.name}</div>
+                                        ${s.address ? `<div class="text-muted text-xs" style="margin-top:0.2rem;">${s.address}</div>` : ''}
                                     </td>
-                                    <td>${s.phone || '-'}</td>
-                                    <td>${s.email || '-'}</td>
-                                    <td>${s.product_count || 0}</td>
-                                    ${App.user.role === 'admin' ? `<td>
+                                    <td>${s.phone ? `<a href="tel:${s.phone}" style="color:var(--accent);font-weight:500;">${s.phone}</a>` : '<span class="text-muted">-</span>'}</td>
+                                    <td class="text-sm">${s.email ? `<a href="mailto:${s.email}" style="color:var(--text-muted);">${s.email}</a>` : '<span class="text-muted">-</span>'}</td>
+                                    <td class="text-center"><span class="badge badge-neutral" style="font-variant-numeric:tabular-nums;font-weight:600;">${s.product_count || 0}</span></td>
+                                    <td class="text-right">
                                         <div class="action-btns">
                                             <button class="btn btn-sm btn-secondary" onclick="Suppliers.showForm(${s.id})" title="Edit">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                                Edit
                                             </button>
                                             <button class="btn btn-sm btn-danger" onclick="Suppliers.deleteSupplier(${s.id}, '${s.name.replace(/'/g, "\\'")}')" title="Delete">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                                Delete
                                             </button>
                                         </div>
-                                    </td>` : ''}
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -63,31 +70,31 @@ const Suppliers = {
         }
 
         App.setContent(`
-            <div class="form-card">
-                <div class="card-header"><h3>${supplier ? 'Edit Supplier' : 'Add New Supplier'}</h3></div>
-                <div class="card-body">
+            <div class="panel" style="max-width:600px;margin:0 auto;">
+                <div class="panel-header">
+                    <h3 class="panel-title">${supplier ? 'Edit Supplier' : 'Add New Supplier'}</h3>
+                </div>
+                <div style="padding-top:1rem;">
                     <form id="supplierForm">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Supplier Name <span class="required">*</span></label>
-                                <input type="text" name="name" value="${supplier?.name || ''}" required minlength="2">
-                            </div>
-                            <div class="form-group">
-                                <label>Phone</label>
-                                <input type="tel" name="phone" value="${supplier?.phone || ''}">
-                            </div>
-                            <div class="form-group">
-                                <label>Email</label>
-                                <input type="email" name="email" value="${supplier?.email || ''}">
-                            </div>
-                            <div class="form-group">
-                                <label>Address</label>
-                                <input type="text" name="address" value="${supplier?.address || ''}">
-                            </div>
+                        <div class="form-group">
+                            <label>Supplier Name <span class="required">*</span></label>
+                            <input type="text" name="name" class="form-control" value="${supplier?.name || ''}" required minlength="2" placeholder="e.g. Metro Cash & Carry">
                         </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">${supplier ? 'Update Supplier' : 'Add Supplier'}</button>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" name="phone" class="form-control" value="${supplier?.phone || ''}" placeholder="10-digit phone number">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" name="email" class="form-control" value="${supplier?.email || ''}" placeholder="supplier@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" name="address" class="form-control" value="${supplier?.address || ''}" placeholder="City, State">
+                        </div>
+                        <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;">
                             <button type="button" class="btn btn-secondary" onclick="Suppliers.load()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">${supplier ? 'Update Supplier' : 'Add Supplier'}</button>
                         </div>
                     </form>
                 </div>
@@ -121,3 +128,5 @@ const Suppliers = {
         else { App.toast(resp.error.message, 'error'); }
     }
 };
+
+window.Suppliers = Suppliers;

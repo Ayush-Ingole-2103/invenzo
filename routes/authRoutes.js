@@ -1,11 +1,11 @@
 // ============================================
-// Authentication Routes
+// Vendor Authentication Routes — PRD Section 9
 // ============================================
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
 const db = require('../database/db');
-const { requireAuth } = require('../middleware/authMiddleware');
+const { requireVendor } = require('../middleware/authMiddleware');
 const { loginLimiter } = require('../middleware/rateLimitMiddleware');
 
 // POST /api/auth/login
@@ -20,59 +20,86 @@ router.post('/login', loginLimiter, (req, res) => {
             });
         }
 
-        const cleanUser = username.trim().toLowerCase();
-        const user = db.get(
-            'SELECT * FROM users WHERE username = ? OR username = ? OR username = ? OR LOWER(username) = ?',
-            [cleanUser, cleanUser.replace(/\s+/g, '_'), cleanUser.replace(/_/g, ' '), cleanUser]
+        const cleanUser = username.trim();
+        const vendor = db.get(
+            `SELECT v.*, s.name as store_name, s.store_code, s.status as store_status, s.suspended_reason
+             FROM vendor_users v
+             JOIN stores s ON v.store_id = s.id
+             WHERE v.username = ? COLLATE NOCASE`,
+            [cleanUser]
         );
 
-        if (!user) {
-            // Log failed attempt
-            db.run(`INSERT INTO activity_logs (user_id, action, details) VALUES (null, 'LOGIN_FAILED', ?)`,
-                [JSON.stringify({ username: username.trim() })]);
+        if (!vendor) {
             return res.status(401).json({
                 success: false,
                 error: { code: 'INVALID_CREDENTIALS', message: 'Invalid username or password.' }
             });
         }
 
-        if (!user.is_active) {
+        if (!vendor.is_active) {
             return res.status(401).json({
                 success: false,
-                error: { code: 'ACCOUNT_DISABLED', message: 'Invalid username or password.' }
+                error: { code: 'INVALID_CREDENTIALS', message: 'Invalid username or password.' }
             });
         }
 
-        const validPassword = bcrypt.compareSync(password, user.password_hash);
-
+        const validPassword = bcrypt.compareSync(password, vendor.password_hash);
         if (!validPassword) {
-            db.run(`INSERT INTO activity_logs (user_id, action, entity_type, entity_id, details) VALUES (?, 'LOGIN_FAILED', 'user', ?, ?)`,
-                [user.id, user.id, JSON.stringify({ reason: 'wrong_password' })]);
+            try {
+                db.run(`INSERT INTO activity_logs (store_id, vendor_user_id, action, entity_type, entity_id, details)
+                        VALUES (?, ?, 'LOGIN_FAILED', 'vendor_user', ?, ?)`,
+                    [vendor.store_id, vendor.id, vendor.id, JSON.stringify({ reason: 'wrong_password' })]);
+            } catch {}
             return res.status(401).json({
                 success: false,
                 error: { code: 'INVALID_CREDENTIALS', message: 'Invalid username or password.' }
             });
         }
 
-        // Success - create session
-        req.session.user = {
-            id: user.id,
-            name: user.name,
-            username: user.username,
-            role: user.role
+        // Check if store is suspended
+        if (vendor.store_status === 'suspended') {
+            return res.status(403).json({
+                success: false,
+                error: {
+                    code: 'STORE_SUSPENDED',
+                    message: 'This store account is suspended. Contact the application provider.'
+                }
+            });
+        }
+
+        // Establish vendor session
+        req.session.vendorUser = {
+            id: vendor.id,
+            store_id: vendor.store_id,
+            name: vendor.name,
+            username: vendor.username,
+            store_name: vendor.store_name,
+            store_code: vendor.store_code,
+            must_change_password: vendor.must_change_password
         };
 
-        // Log successful login
-        db.run(`INSERT INTO activity_logs (user_id, action, entity_type, entity_id) VALUES (?, 'LOGIN_SUCCESS', 'user', ?)`,
-            [user.id, user.id]);
+        // Update last login
+        db.run("UPDATE vendor_users SET last_login_at = datetime('now') WHERE id = ?", [vendor.id]);
+
+        // Audit log
+        try {
+            db.run(`INSERT INTO activity_logs (store_id, vendor_user_id, action, entity_type, entity_id)
+                    VALUES (?, ?, 'LOGIN_SUCCESS', 'vendor_user', ?)`,
+                [vendor.store_id, vendor.id, vendor.id]);
+        } catch {}
 
         res.json({
             success: true,
             data: {
-                id: user.id,
-                name: user.name,
-                username: user.username,
-                role: user.role,
+                id: vendor.id,
+                store_id: vendor.store_id,
+                store_name: vendor.store_name,
+                storeName: vendor.store_name,
+                store_code: vendor.store_code,
+                storeCode: vendor.store_code,
+                name: vendor.name,
+                username: vendor.username,
+                must_change_password: vendor.must_change_password,
                 csrfToken: req.session.csrfToken
             }
         });
@@ -85,114 +112,100 @@ router.post('/login', loginLimiter, (req, res) => {
     }
 });
 
-// POST /api/auth/register
-router.post('/register', loginLimiter, (req, res) => {
+// GET /api/auth/me
+router.get('/me', requireVendor, (req, res) => {
     try {
-        const { name, username, password, role } = req.body;
-
-        if (!name || !name.trim()) {
-            return res.status(400).json({
-                success: false,
-                error: { code: 'VALIDATION_ERROR', message: 'Full name is required.' }
-            });
-        }
-
-        if (!username || !username.trim()) {
-            return res.status(400).json({
-                success: false,
-                error: { code: 'VALIDATION_ERROR', message: 'Username is required.' }
-            });
-        }
-
-        const cleanUsername = username.trim().toLowerCase();
-        if (cleanUsername.length < 3 || cleanUsername.length > 50 || !/^[a-z0-9_.\s-]+$/.test(cleanUsername)) {
-            return res.status(400).json({
-                success: false,
-                error: { code: 'VALIDATION_ERROR', message: 'Username must be 3-50 characters (letters, numbers, underscore, space, hyphen).' }
-            });
-        }
-
-        if (!password || password.length < 6) {
-            return res.status(400).json({
-                success: false,
-                error: { code: 'VALIDATION_ERROR', message: 'Password must be at least 6 characters.' }
-            });
-        }
-
-        const userRole = 'admin';
-
-        const existing = db.get('SELECT id FROM users WHERE username = ?', [cleanUsername]);
-        if (existing) {
-            return res.status(400).json({
-                success: false,
-                error: { code: 'DUPLICATE_USERNAME', message: 'Username is already registered. Please choose another.' }
-            });
-        }
-
-        const password_hash = bcrypt.hashSync(password, 10);
-        db.run(
-            'INSERT INTO users (name, username, password_hash, role, is_active) VALUES (?, ?, ?, ?, 1)',
-            [name.trim(), cleanUsername, password_hash, userRole]
+        const vendor = db.get(
+            `SELECT v.id, v.store_id, v.name, v.username, v.must_change_password,
+                    s.name as store_name, s.store_code, s.city
+             FROM vendor_users v
+             JOIN stores s ON v.store_id = s.id
+             WHERE v.id = ?`,
+            [req.vendorUserId]
         );
 
-        const newUser = db.get('SELECT id, name, username, role FROM users WHERE username = ?', [cleanUsername]);
+        if (!vendor) {
+            return res.status(401).json({
+                success: false,
+                error: { code: 'UNAUTHORIZED', message: 'Vendor not found.' }
+            });
+        }
 
-        // Auto-login into session
-        req.session.user = {
-            id: newUser.id,
-            name: newUser.name,
-            username: newUser.username,
-            role: newUser.role
-        };
-
-        // Log registration activity
-        db.run("INSERT INTO activity_logs (user_id, action, entity_type, entity_id, details) VALUES (?, 'USER_REGISTER', 'user', ?, ?)",
-            [newUser.id, newUser.id, JSON.stringify({ username: newUser.username, role: newUser.role })]);
-
-        res.status(201).json({
+        res.json({
             success: true,
-            message: 'Account created successfully!',
             data: {
-                id: newUser.id,
-                name: newUser.name,
-                username: newUser.username,
-                role: newUser.role,
+                ...vendor,
+                storeName: vendor.store_name,
+                storeCode: vendor.store_code,
                 csrfToken: req.session.csrfToken
             }
         });
     } catch (err) {
-        console.error('Registration error:', err);
         res.status(500).json({
             success: false,
-            error: { code: 'INTERNAL_ERROR', message: 'An error occurred during account creation.' }
+            error: { code: 'INTERNAL_ERROR', message: 'Failed to retrieve profile.' }
         });
     }
 });
 
-// POST /api/auth/logout
-router.post('/logout', requireAuth, (req, res) => {
-    const userId = req.session.user.id;
-    db.run(`INSERT INTO activity_logs (user_id, action) VALUES (?, 'LOGOUT')`, [userId]);
+// POST /api/auth/change-password
+router.post('/change-password', requireVendor, (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        if (!newPassword || newPassword.length < 10) {
+            return res.status(400).json({
+                success: false,
+                error: { code: 'VALIDATION_ERROR', message: 'New password must be at least 10 characters long.' }
+            });
+        }
 
+        const vendor = db.get('SELECT password_hash, username FROM vendor_users WHERE id = ?', [req.vendorUserId]);
+        if (!vendor) {
+            return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'User not found.' } });
+        }
+
+        if (currentPassword) {
+            const valid = bcrypt.compareSync(currentPassword, vendor.password_hash);
+            if (!valid) {
+                return res.status(400).json({
+                    success: false,
+                    error: { code: 'INVALID_PASSWORD', message: 'Current password is incorrect.' }
+                });
+            }
+        }
+
+        if (newPassword.toLowerCase() === vendor.username.toLowerCase()) {
+            return res.status(400).json({
+                success: false,
+                error: { code: 'INVALID_PASSWORD', message: 'New password must differ from username.' }
+            });
+        }
+
+        const newHash = bcrypt.hashSync(newPassword, 12);
+        db.run('UPDATE vendor_users SET password_hash = ?, must_change_password = 0 WHERE id = ?', [newHash, req.vendorUserId]);
+        req.session.vendorUser.must_change_password = 0;
+
+        db.run(`INSERT INTO activity_logs (store_id, vendor_user_id, action, entity_type, entity_id)
+                VALUES (?, ?, 'PASSWORD_CHANGED', 'vendor_user', ?)`,
+            [req.storeId, req.vendorUserId, req.vendorUserId]);
+
+        res.json({ success: true, message: 'Password updated successfully.' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to update password.' } });
+    }
+});
+
+// POST /api/auth/logout
+router.post('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({
                 success: false,
-                error: { code: 'LOGOUT_ERROR', message: 'Failed to log out.' }
+                error: { code: 'LOGOUT_ERROR', message: 'Failed to logout.' }
             });
         }
+        res.clearCookie('stocker_vendor_sid');
         res.json({ success: true, message: 'Logged out successfully.' });
-    });
-});
-
-// GET /api/auth/me
-router.get('/me', requireAuth, (req, res) => {
-    res.json({
-        success: true,
-        data: {
-            ...req.session.user,
-            csrfToken: req.session.csrfToken
-        }
     });
 });
 
